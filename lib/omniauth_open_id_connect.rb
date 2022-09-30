@@ -74,7 +74,7 @@ module ::OmniAuth
 # jvdm introduced next two lines to handle parameter in field 'openid connect authorize parameters'
 # jvdm we need something like kc_idp_hint=xxxxx where xxxx in community indication
             k = k.split("=")
-            session["omniauth.#{k.first} = params[k.first] = k.last
+            session["omniauth.#{k.first}"] = params[k.first] = k.last
           end
           if options[:claims].present?
             params[:claims] = options[:claims]
