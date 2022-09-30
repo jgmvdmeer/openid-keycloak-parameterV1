@@ -10,7 +10,6 @@ module ::OmniAuth
   module Strategies
     class OpenIDConnect < OmniAuth::Strategies::OAuth2
       class NonceVerifyError < StandardError; end
-      class SubVerifyError < StandardError; end
 
       option :scope, "openid"
       option :discovery, true
@@ -68,18 +67,20 @@ module ::OmniAuth
       end
 
       def authorize_params
+        # attempt to handle passthrough parameter with assignment. Example: kc_idp_hint=test
         super.tap do |params|
           options[:passthrough_authorize_options].each do |k|
-            params[k] = request.params[k.to_s] unless [nil, ''].include?(request.params[k.to_s])
+#            params[k] = request.params[k.to_s] unless [nil, ''].include?(request.params[k.to_s])
+# jvdm introduced next two lines to handle parameter in field 'openid connect authorize parameters'
+# jvdm we need something like kc_idp_hint=xxxxx where xxxx in community indication
+            k = k.split("=")
+            session["omniauth.#{k.first} = params[k.first] = k.last
           end
-
           if options[:claims].present?
             params[:claims] = options[:claims]
           end
-
           params[:scope] = options[:scope]
           session['omniauth.nonce'] = params[:nonce] = SecureRandom.hex(32)
-
           options[:passthrough_token_options].each do |k|
             session["omniauth.param.#{k}"] = request.params[k.to_s] unless [nil, ''].include?(request.params[k.to_s])
           end
@@ -114,8 +115,6 @@ module ::OmniAuth
           fail!(:jwt_decode_failed, e)
         rescue NonceVerifyError => e
           fail!(:jwt_nonce_verify_failed, e)
-        rescue SubVerifyError => e
-          fail!(:openid_connect_sub_mismatch, e)
         end
       end
 
@@ -155,13 +154,7 @@ module ::OmniAuth
           info
         end
 
-        userinfo_sub = @raw_info['sub']
-        id_token_sub = id_token_info['sub']
-        if userinfo_sub != id_token_sub
-          raise SubVerifyError.new(
-            "OIDC `sub` mismatch. ID Token value: #{id_token_sub.inspect}. UserInfo value: #{userinfo_sub.inspect}"
-          )
-        end
+        return fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected")) unless @raw_info['sub'] == id_token_info['sub']
         @raw_info
       end
 
