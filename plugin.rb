@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-# name: discourse-openid-connect
+# name: openid-keycloak-parameterV1
 # about: Add support for openid-connect as a login provider
 # version: 1.0
-# authors: David Taylor
-# url: https://github.com/discourse/discourse-openid-connect
+# authors: David Taylor, adapted for use with keycloak Jan van der Meer
+# url: https://github.com/jgmvdmeer/openid-keycloak-parameterV1
 # transpile_js: true
 
 enabled_site_setting :openid_connect_enabled
